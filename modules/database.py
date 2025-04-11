@@ -1,10 +1,10 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from config import MONGO_URI
-import datetime
+from motor.motor_asyncio import AsyncIOMotorClient  # MongoDB connection
+from config import MONGO_URI  # Config file where Mongo URI is stored
+import datetime  # To handle timestamps
 
-# Connect to MongoDB
+# MongoDB client initialization
 client = AsyncIOMotorClient(MONGO_URI)
-db = client["file_share_bot"]
+db = client["file_share_bot"]  # Use your desired DB name
 
 # Collections
 users_col = db["users"]
@@ -48,3 +48,29 @@ async def save_file_data(file_id, user_id, file_name):
         "file_name": file_name,
         "timestamp": datetime.datetime.utcnow()
     })
+
+# Add a User to the Database
+async def add_user(user_id, name):
+    """Add or update a user in the database."""
+    await users_col.update_one(
+        {"_id": user_id},
+        {"$set": {"name": name}},
+        upsert=True
+    )
+
+# Get all Users
+async def get_all_users():
+    """Fetch all users from the database."""
+    return await users_col.find().to_list(length=1000)
+
+# Batch Save Functionality
+async def save_batch_files(user_id, file_ids):
+    """Save a batch of files into the database."""
+    batch_id = str(datetime.datetime.utcnow().timestamp())
+    await batches_col.insert_one({
+        "user_id": user_id,
+        "file_ids": file_ids,
+        "batch_id": batch_id,
+        "timestamp": datetime.datetime.utcnow()
+    })
+    return batch_id
