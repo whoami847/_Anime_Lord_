@@ -1,5 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import MONGO_URI
+import datetime
 
 # Connect to MongoDB
 client = AsyncIOMotorClient(MONGO_URI)
@@ -16,24 +17,34 @@ force_sub_col = db["force_sub"]  # Collection for force subscription
 # Force Subscription Functions
 
 async def get_fsub_channels():
-    # Fetching all force subscription channels from the database
+    """Fetch all force subscription channels from the database."""
     data = await force_sub_col.find().to_list(length=None)
     return [item["chat_id"] for item in data]  # Return a list of chat_ids
 
 async def add_fsub_channel(chat_id):
-    # Adding a new channel to the force subscription list
+    """Add a new channel to the force subscription list."""
     exists = await force_sub_col.find_one({"chat_id": chat_id})
     if not exists:
         await force_sub_col.insert_one({"chat_id": chat_id})
 
 async def remove_fsub_channel(chat_id):
-    # Removing a channel from the force subscription list
+    """Remove a channel from the force subscription list."""
     await force_sub_col.delete_one({"chat_id": chat_id})
 
 async def is_user_joined(client, user_id, channel_id):
-    # Check if the user has joined the given channel
+    """Check if the user has joined the given channel."""
     try:
         member = await client.get_chat_member(channel_id, user_id)
         return member.status in ["member", "administrator", "creator"]
     except Exception:
         return False
+
+# Save File Data
+async def save_file_data(file_id, user_id, file_name):
+    """Save the file's data into the database."""
+    await files_col.insert_one({
+        "file_id": file_id,
+        "user_id": user_id,
+        "file_name": file_name,
+        "timestamp": datetime.datetime.utcnow()
+    })
