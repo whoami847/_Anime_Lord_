@@ -3,3 +3,4 @@ tgcrypto
 dnspython
 pymongo[srv]
 flask
+motor
